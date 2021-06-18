@@ -113,7 +113,7 @@ int main(void)
 	LCD1602_Init(&h1_lcd1602_fc113);
 	LCD1602_scan_I2C_bus( &h1_lcd1602_fc113 ) ;
 	LCD1602_Scan_I2C_to_UART( &h1_lcd1602_fc113, &huart1 ) ;
-	HAL_Delay(1000);
+	//	HAL_Delay(1000);
 	LCD1602_Clear(&h1_lcd1602_fc113);
 
 	bh1750_struct h1_bh1750 = {
@@ -129,6 +129,7 @@ int main(void)
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 	uint32_t Power_PWM_u32 = 0;
 
+	HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -136,23 +137,26 @@ int main(void)
   while (1)
   {
 	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
-	HAL_Delay( 300 ) ;
+	HAL_Delay( 10 ) ;
 	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
-	HAL_Delay( 100 ) ;
-
-	sprintf(uart_buff_char, "Power_PWM: %02d ",  (int)Power_PWM_u32++ ) ;
-	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
-
-	sprintf( uart_buff_char, "Power_PWM: %02d\r",  (int)Power_PWM_u32 ) ;
-	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
-
+	HAL_Delay( 90 ) ;
 
 	BH1750_get_lux( &h1_bh1750, bh1750_one_time_h_resolutione, &lux_u16);
-	sprintf(uart_buff_char,"lux: %d\r\n" , (int)lux_u16 ) ;
+	sprintf(uart_buff_char,"Lux: %05d;" , (int)lux_u16 ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 
-	sprintf( uart_buff_char, "Lux: %02d\r",  (int)lux_u16 ) ;
+	sprintf( uart_buff_char, "lux: %05d     *",  (int)lux_u16 ) ;
 	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
+
+	Power_PWM_u32 = 100 + lux_u16 / 65 ;
+	TIM4->CCR1 = Power_PWM_u32;
+
+	sprintf(uart_buff_char, "\t Power_PWM: %05d \r",  (int)Power_PWM_u32 ) ;
+	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+
+	sprintf( uart_buff_char, "pwm: %05d     *",  (int)Power_PWM_u32 ) ;
+	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
+
 	LCD1602_Cursor_Return( &h1_lcd1602_fc113 ) ;
 
     /* USER CODE END WHILE */
