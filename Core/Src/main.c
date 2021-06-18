@@ -19,13 +19,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 	#include "stdio.h"
 	#include <string.h>
+	#include "lcd1602_fc113_sm.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,6 +92,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 	char 		uart_buff_char[0xFF];
 	#define 	DATE_as_int_str 	(__DATE__)
@@ -96,19 +101,39 @@ int main(void)
 	sprintf(uart_buff_char,"Build: %s. Time: %s.\r\n" , DATE_as_int_str , TIME_as_int_str ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 	int cnt_int = 0;
+
+	lcd1602_fc113_struct h1_lcd1602_fc113 =
+	{
+		.i2c = &hi2c1,
+		.device_i2c_address = LCD1602_I2C_ADDR
+	};
+
+	LCD1602_Init(&h1_lcd1602_fc113);
+	LCD1602_scan_I2C_bus( &h1_lcd1602_fc113 ) ;
+	LCD1602_Scan_I2C_to_UART( &h1_lcd1602_fc113, &huart1 ) ;
+	sprintf(uart_buff_char,"AB1,AB2,AB3,AB4,AB5,AB6,AB7.");
+	LCD1602_Print_Line(&h1_lcd1602_fc113, uart_buff_char, strlen(uart_buff_char));
+	HAL_Delay(1000);
+	LCD1602_Clear(&h1_lcd1602_fc113);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
-	  HAL_Delay( 500 ) ;
-	  HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
-	  HAL_Delay( 100 ) ;
+	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
+	HAL_Delay( 500 ) ;
+	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
+	HAL_Delay( 100 ) ;
 
-		sprintf(uart_buff_char, "%02d\r\n",  cnt_int++ ) ;
-		HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+	sprintf(uart_buff_char, "cnt_int=%02d\r\n",  cnt_int++ ) ;
+	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+
+	sprintf( uart_buff_char, "IND: cnt_int=%02d\r",  cnt_int++ ) ;
+	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
+	LCD1602_Cursor_Return( h1_lcd1602_fc113 ) ;
+
 
     /* USER CODE END WHILE */
 
