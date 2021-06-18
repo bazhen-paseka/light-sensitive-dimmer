@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -29,6 +30,8 @@
 	#include "stdio.h"
 	#include <string.h>
 	#include "lcd1602_fc113_sm.h"
+	#include "tm1637_sm.h"
+	#include "bh1750_sm.h"
 
 /* USER CODE END Includes */
 
@@ -93,6 +96,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_I2C1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 	char 		uart_buff_char[0xFF];
 	#define 	DATE_as_int_str 	(__DATE__)
@@ -100,10 +104,8 @@ int main(void)
 
 	sprintf(uart_buff_char,"Build: %s. Time: %s.\r\n" , DATE_as_int_str , TIME_as_int_str ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
-	int cnt_int = 0;
 
-	lcd1602_fc113_struct h1_lcd1602_fc113 =
-	{
+	lcd1602_fc113_struct h1_lcd1602_fc113 = {
 		.i2c = &hi2c1,
 		.device_i2c_address = LCD1602_I2C_ADDR
 	};
@@ -111,10 +113,21 @@ int main(void)
 	LCD1602_Init(&h1_lcd1602_fc113);
 	LCD1602_scan_I2C_bus( &h1_lcd1602_fc113 ) ;
 	LCD1602_Scan_I2C_to_UART( &h1_lcd1602_fc113, &huart1 ) ;
-	sprintf(uart_buff_char,"AB1,AB2,AB3,AB4,AB5,AB6,AB7.");
-	LCD1602_Print_Line(&h1_lcd1602_fc113, uart_buff_char, strlen(uart_buff_char));
 	HAL_Delay(1000);
 	LCD1602_Clear(&h1_lcd1602_fc113);
+
+	bh1750_struct h1_bh1750 = {
+		.i2c = &hi2c1,
+		.device_i2c_address = BH1750_I2C_ADDR
+	};
+
+	BH1750_init( &h1_bh1750, bh1750_one_time_h_resolutione );
+
+	uint16_t lux_u16 = 0 ;
+	BH1750_get_lux( &h1_bh1750, bh1750_one_time_h_resolutione, &lux_u16);
+	sprintf(uart_buff_char,"LUS=%d\r\n" , (int)lux_u16 ) ;
+	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+	uint32_t Power_PWM_u32 = 0;
 
   /* USER CODE END 2 */
 
@@ -123,17 +136,24 @@ int main(void)
   while (1)
   {
 	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
-	HAL_Delay( 500 ) ;
+	HAL_Delay( 300 ) ;
 	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
 	HAL_Delay( 100 ) ;
 
-	sprintf(uart_buff_char, "cnt_int=%02d\r\n",  cnt_int++ ) ;
+	sprintf(uart_buff_char, "Power_PWM: %02d ",  (int)Power_PWM_u32++ ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 
-	sprintf( uart_buff_char, "IND: cnt_int=%02d\r",  cnt_int++ ) ;
+	sprintf( uart_buff_char, "Power_PWM: %02d\r",  (int)Power_PWM_u32 ) ;
 	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
-	LCD1602_Cursor_Return( h1_lcd1602_fc113 ) ;
 
+
+	BH1750_get_lux( &h1_bh1750, bh1750_one_time_h_resolutione, &lux_u16);
+	sprintf(uart_buff_char,"lux: %d\r\n" , (int)lux_u16 ) ;
+	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+
+	sprintf( uart_buff_char, "Lux: %02d\r",  (int)lux_u16 ) ;
+	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
+	LCD1602_Cursor_Return( &h1_lcd1602_fc113 ) ;
 
     /* USER CODE END WHILE */
 
