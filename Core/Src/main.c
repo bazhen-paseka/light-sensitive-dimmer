@@ -24,7 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+	#include "stdio.h"
+	#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,7 +89,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+	char 		uart_buff_char[0xFF];
+	#define 	DATE_as_int_str 	(__DATE__)
+	#define 	TIME_as_int_str 	(__TIME__)
 
+	sprintf(uart_buff_char,"Build: %s. Time: %s.\r\n" , DATE_as_int_str , TIME_as_int_str ) ;
+	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
+	int cnt_int = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -96,10 +103,12 @@ int main(void)
   while (1)
   {
 	  HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
-	  HAL_Delay( 400 ) ;
+	  HAL_Delay( 500 ) ;
 	  HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
-	  HAL_Delay( 400 ) ;
+	  HAL_Delay( 100 ) ;
 
+		sprintf(uart_buff_char, "%02d\r\n",  cnt_int++ ) ;
+		HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 
     /* USER CODE END WHILE */
 
