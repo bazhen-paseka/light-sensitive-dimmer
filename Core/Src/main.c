@@ -136,10 +136,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin, RESET ) ;
-	HAL_Delay( 10 ) ;
-	HAL_GPIO_WritePin( LED_GPIO_Port, LED_Pin,   SET ) ;
-	HAL_Delay( 90 ) ;
+	HAL_GPIO_TogglePin( LED_GPIO_Port, LED_Pin ) ;
 
 	BH1750_get_lux( &h1_bh1750, bh1750_one_time_h_resolutione, &lux_u16);
 	sprintf(uart_buff_char,"Lux: %05d;" , (int)lux_u16 ) ;
