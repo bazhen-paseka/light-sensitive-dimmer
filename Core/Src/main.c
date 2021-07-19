@@ -42,6 +42,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+	#define LUX_MAX	0xFFFF
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -142,16 +145,20 @@ int main(void)
 	sprintf(uart_buff_char,"Lux: %05d;" , (int)lux_u16 ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 
-	sprintf( uart_buff_char, "lux: %05d     *",  (int)lux_u16 ) ;
+	sprintf( uart_buff_char, "Lux: %05d     *",  (int)lux_u16 ) ;
 	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
 
-	Power_PWM_u32 = 100 + lux_u16 / 65 ;
+	//Power_PWM_u32 = 1000 * lux_u16 / LUX_MAX ;
+	Power_PWM_u32 = lux_u16 ;
+	if ( Power_PWM_u32 > 1000 ) {
+		Power_PWM_u32 = 1000 ;
+	}
 	TIM4->CCR1 = Power_PWM_u32;
 
 	sprintf(uart_buff_char, "\t Power_PWM: %05d \r",  (int)Power_PWM_u32 ) ;
 	HAL_UART_Transmit( &huart1, (uint8_t *)uart_buff_char , strlen(uart_buff_char) , 100 ) ;
 
-	sprintf( uart_buff_char, "pwm: %05d     *",  (int)Power_PWM_u32 ) ;
+	sprintf( uart_buff_char, "PWM: %05d     *",  (int)Power_PWM_u32 ) ;
 	LCD1602_Print_Line( &h1_lcd1602_fc113 , uart_buff_char , strlen(uart_buff_char) ) ;
 
 	LCD1602_Cursor_Return( &h1_lcd1602_fc113 ) ;
